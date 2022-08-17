@@ -12,4 +12,3 @@ class StartWidget(QWidget):
     @pyqtSlot()
     def close_start_widget(self):
         create_game_widget(self)
-        print("StartWidget closed")
