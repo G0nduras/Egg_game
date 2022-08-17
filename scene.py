@@ -1,16 +1,18 @@
 import random
 from typing import List
+import sqlite3
 
-from PyQt6.QtCore import QTimer, Qt, QPointF
-from PyQt6.QtGui import QVector2D
+from PyQt6.QtCore import QTimer, Qt, QPointF, pyqtSignal
 from PyQt6.QtWidgets import QGraphicsScene
 
 from egg import Egg
 from handler import Handler
+from output_widget import create_output_widget
 
 
 class Scene(QGraphicsScene):
     EPS = 1e-5
+    create_output_widget_signal = pyqtSignal(str)
 
     def __init__(
             self,
@@ -25,7 +27,18 @@ class Scene(QGraphicsScene):
         self.timer_spawn_egg.timeout.connect(self.spawn_egg_on_tick)
         self.timer_spawn_egg.start(1000)
 
+        connection = sqlite3.connect('database.db')
+        cursor = connection.cursor()
+        cursor.execute('''CREATE TABLE IF NOT EXISTS GameScores
+                      (name TEXT, score INT, timestamp INT)''')
+        cursor.execute("INSERT INTO Shows VALUES ('Pasha','23','1234567891')")
+        connection.commit()
+        data = list(cursor.execute("SELECT * FROM GameScores"))
+        connection.commit()
+        connection.close()
+        print(data)
         self._score = 0
+        self._HP = 3
         self.spawns_egg: List[Egg] = []
         self._egg = Egg(
             x=random.randint(20, 1000),
@@ -51,6 +64,7 @@ class Scene(QGraphicsScene):
     def key_press_event(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self._widget.close()
+
         if event.key() == Qt.Key.Key_Right:
             new_pos = self._platform.pos() + self._shift
             self._platform.setPos(new_pos)
@@ -61,8 +75,6 @@ class Scene(QGraphicsScene):
     def egg_intersect_platform(self, scene: QGraphicsScene):
         for spawn_egg in self.spawns_egg:
             lower_bound_egg = spawn_egg.pos().y() + (spawn_egg._radius)
-         #   print(1, lower_bound_egg)
-          #  print(2, float(500))
             if abs(self._platform.pos().y() - lower_bound_egg) < Scene.EPS:
                 print("=" * 100)
                 print("platf", self._platform.pos().x())
@@ -73,11 +85,18 @@ class Scene(QGraphicsScene):
                         self._score += 1
                         print(self._score)
                     else:
-                        print("GAME OVER!" * 10)
-                        self._widget.close()
+                        self._game_over()
+
                 else:
-                    print("GAME OVER!" * 10)
-                    self._widget.close()
+                    self._game_over()
+
+    def _game_over(self):
+        self._HP -= 1
+        if self._HP == 0:
+            print("GAME OVER!" * 10)
+            create_output_widget(self._widget, login=self._widget._output_widget)
+            self._widget.hide()
+        self.timer_spawn_egg.stop()
 
     def on_timer_tick(self):
         for spawn_egg in self.spawns_egg:

@@ -1,20 +1,28 @@
 import sys
 
-from PyQt6.QtCore import QSizeF, QPointF, QRectF, Qt
-from PyQt6.QtWidgets import QApplication, QAbstractScrollArea
-
-from widget import Widget
+from PyQt6.QtCore import QSize
+from PyQt6.QtWidgets import QApplication, QPushButton, QLabel, QLineEdit, QVBoxLayout
+from start_widget import StartWidget
 
 
 def run_main():
     app = QApplication(sys.argv)
-    widget = Widget()
-    widget.setWindowTitle("EggGame")
-    widget.showFullScreen()
-    widget.setSceneRect(QRectF(QPointF(0, 0), QSizeF(widget.size())))
-    widget.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow)
-    widget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-    widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    widget = StartWidget()
+    widget.setWindowTitle("Start")
+    widget.setFixedSize(QSize(300, 100))
+    button = QPushButton("OK!")
+    button.setCheckable(True)
+    label = QLabel()
+    input_ = QLineEdit()
+    input_.textChanged.connect(label.setText)
+    layout = QVBoxLayout()
+    layout.addWidget(input_)
+    layout.addWidget(label)
+    layout.addWidget(button)
+    widget.setLayout(layout)
+    widget._input = input_
+    button.clicked.connect(widget.close_start_widget)
+    widget.show()
     sys.exit(app.exec())
 
 
